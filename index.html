@@ -79,34 +79,80 @@
         h3 {
             margin: 0 0 10px 0;
         }
-        .filter-box {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
         .percentage {
             font-weight: bold;
             color: #2d7a2d;
+        }
+        
+        /* Mobile Optimierungen */
+        @media (max-width: 768px) {
+            .info-box {
+                top: auto;
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                max-height: 40vh;
+                overflow-y: auto;
+                font-size: 12px;
+            }
+            
+            .info-box h3 {
+                font-size: 16px;
+            }
+            
+            .info-box p {
+                font-size: 10px !important;
+            }
+            
+            .legend {
+                display: none;
+            }
+            
+            .legend.mobile-visible {
+                display: block;
+                position: fixed;
+                top: 60px;
+                left: 10px;
+                right: 10px;
+                bottom: auto;
+                max-height: 60vh;
+                max-width: none;
+            }
+            
+            .legend-item {
+                font-size: 13px;
+                padding: 8px;
+                margin: 3px 0;
+            }
+            
+            .legend-toggle {
+                display: block;
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: white;
+                padding: 10px 15px;
+                border-radius: 5px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                z-index: 1001;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .legend-toggle {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
     <div id="map"></div>
     
-    <div class="filter-box">
-        <h3>Ansicht</h3>
-        <label>
-            <input type="checkbox" id="showStreets" checked> Straßen
-        </label><br>
-        <label>
-            <input type="checkbox" id="showBuildings" checked> Gebäude
-        </label>
-    </div>
+    <div class="legend-toggle" onclick="toggleLegend()">📊 Legende</div>
     
     <div class="info-box">
         <h3>Grünen-Stimmenanteil</h3>
@@ -133,6 +179,11 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Toggle Legende auf Mobile
+        function toggleLegend() {
+            const legend = document.querySelector('.legend');
+            legend.classList.toggle('mobile-visible');
+        }
         // Initialisiere Karte
         const map = L.map('map').setView([49.455, 8.165], 14);
 
@@ -261,17 +312,6 @@
             };
         }
 
-        // Filter Features
-        function filterFeature(feature) {
-            const showStreets = document.getElementById('showStreets').checked;
-            const showBuildings = document.getElementById('showBuildings').checked;
-            
-            if (feature.properties.highway && !showStreets) return false;
-            if (feature.properties.building && !showBuildings) return false;
-            
-            return true;
-        }
-
         // Event Handlers
         function highlightFeature(e) {
             const layer = e.target;
@@ -337,28 +377,8 @@
                     return styleBuilding(feature);
                 }
             },
-            filter: filterFeature,
             onEachFeature: onEachFeature
         }).addTo(map);
-
-        // Filter Event Listeners
-        document.getElementById('showStreets').addEventListener('change', updateMap);
-        document.getElementById('showBuildings').addEventListener('change', updateMap);
-
-        function updateMap() {
-            map.removeLayer(geojsonLayer);
-            geojsonLayer = L.geoJSON(geojsonData, {
-                style: function(feature) {
-                    if (feature.properties.highway) {
-                        return styleStreet(feature);
-                    } else {
-                        return styleBuilding(feature);
-                    }
-                },
-                filter: filterFeature,
-                onEachFeature: onEachFeature
-            }).addTo(map);
-        }
 
         // Legende erstellen
         const legendContent = document.getElementById('legend-content');
@@ -403,6 +423,12 @@
                     selectedBezirk = clickedBezirk;
                     this.classList.add('selected');
                     highlightBezirk(clickedBezirk);
+                }
+                
+                // Auf Mobile: Legende schließen nach Auswahl
+                if (window.innerWidth <= 768) {
+                    const legend = document.querySelector('.legend');
+                    legend.classList.remove('mobile-visible');
                 }
             });
             
